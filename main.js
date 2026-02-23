@@ -14,37 +14,41 @@ init();
 animate();
 
 function init() {
-
+    const floorColour = 0x888888; 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050510);
+    scene.background = new THREE.Color(floorColour);
 
-    camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-    );
-    camera.position.set(0, 2, 10);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    // const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+    // hemiLight.position.set(0, 20, 0);
+    // scene.add(hemiLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(0, 10, 0);
+    scene.add(pointLight);
+
     controls = new PointerLockControls(camera, document.body);
+    controls.getObject().position.set(0, 5, 0);
+    scene.add(controls.getObject());
+
+    const ambientLight = new THREE.AmbientLight(0x4040ff, 0.5); 
+    scene.add(ambientLight);
+
+    const topLight = new THREE.DirectionalLight(0x5599ff, 1.0);
+    topLight.position.set(0, 40, 0);
+    scene.add(topLight);
 
     document.body.addEventListener('click', () => {
         controls.lock();
     });
 
     scene.add(controls.getObject());
-
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404080, 1.5);
-    scene.add(ambientLight);
-
-    const pointLight = new THREE.PointLight(0xffffff, 1.5);
-    pointLight.position.set(0, 10, 0);
-    scene.add(pointLight);
 
     createRoom();
     createTables();
@@ -56,22 +60,8 @@ function init() {
 }
 
 function createRoom() {
-
     const roomSize = 80;
 
-    // Floor
-    const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomSize, roomSize),
-        new THREE.MeshStandardMaterial({ 
-            color: 0x1a1d3a,
-            metalness: 0.2,
-            roughness: 0.6
-        })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
-
-    // Walls
     const wallMaterial = new THREE.MeshStandardMaterial({
         color: 0x10142a,
         side: THREE.BackSide
@@ -84,8 +74,30 @@ function createRoom() {
 
     room.position.y = 20;
     scene.add(room);
+    
+    const ceilingGeo = new THREE.SphereGeometry(roomSize / 2, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+    const ceilingMat = new THREE.MeshBasicMaterial({
+        color: 0x112244,
+        side: THREE.BackSide,
+    });
 
-    // Add glowing ceiling effect
+    const dome = new THREE.Mesh(ceilingGeo, ceilingMat);
+    dome.position.y = 35;
+    dome.scale.y = 0.5;
+    scene.add(dome);
+
+    const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(roomSize, roomSize),
+        new THREE.MeshStandardMaterial({ 
+            color: 0x888888,
+            roughness: 0.8,
+            side: THREE.DoubleSide
+        })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0.01;
+    scene.add(floor);
+
     const ceilingGlow = new THREE.Mesh(
         new THREE.PlaneGeometry(roomSize - 5, roomSize - 5),
         new THREE.MeshBasicMaterial({
@@ -98,6 +110,10 @@ function createRoom() {
     ceilingGlow.rotation.x = Math.PI / 2;
     ceilingGlow.position.y = 39.9;
     scene.add(ceilingGlow);
+
+    const ceilingLight = new THREE.PointLight(0x4488ff, 20, 100);
+    ceilingLight.position.set(0, 38, 0);
+    scene.add(ceilingLight);
 }
 
 function createTables() {
@@ -140,6 +156,10 @@ function createTable() {
 
     group.add(base);
     group.add(top);
+    
+    const lampLight = new THREE.PointLight(0xffaa44, 1.5, 15);
+    lampLight.position.set(0, 5, 0); 
+    group.add(lampLight);
 
     return group;
 }
