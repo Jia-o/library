@@ -10,7 +10,7 @@ Models:
 Prompts:
 - given these inspo library images, you will code a virtual space turning those images 3d where the user can use arrow keys to walk around the library.
 - make the library have 16 "tables" and on each table put a placeholder jar which will eventually be replaced with an animated jar that gives you books. first, give me a plan of how you will code this
-- 
+- why does it just show a white screen with the index.html instructions when i run it? the content on main.js doesn't appear
 
 Non-AI:
 - inpo images
