@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Library</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #instructions {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: white;
+      font-family: Arial;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="instructions">
+  Click to enable controls<br>
+  Arrow Keys = Move<br>
+  Mouse = Look around
+</div>
+
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/"
+      }
+    }
+  </script>
+
+<script type="module" src="main.js"></script>
+
+</body>
+</html>
