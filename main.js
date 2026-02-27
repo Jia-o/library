@@ -8,6 +8,14 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(0, 0); 
 let clickableJars = []; 
 let backendData = { readings: [], tags: [] };
+let textureLoader = new THREE.TextureLoader();
+
+const THEMES = [
+    "AI", "Altruism", "Art", "Culture", 
+    "Economics", "Environment", "Ethics", "Health", 
+    "IR", "Media", "Philosophy", "Policy", 
+    "Politics", "Technology", "History", "Random"
+];
 
 init();
 animate();
@@ -43,8 +51,8 @@ function init() {
     });
 
     createRoom();
-    createTables(); // Build geometry immediately so the room isn't empty
-    fetchData();    // Load the data in the background
+    createTables();
+    fetchData();
 
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
@@ -72,34 +80,108 @@ async function fetchData() {
     }
 }
 
-function createRoom() {
-    const roomSize = 100;
-    // Ground plane so you can see where you are
-    const floorGeo = new THREE.PlaneGeometry(roomSize, roomSize);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
 
+function createRoom() {
+    const roomSize = 80;
     const loader = new THREE.TextureLoader();
+    
+    // Load your galaxy texture
     const galaxyTexture = loader.load('ceiling.png');
-    const ceilingGeo = new THREE.SphereGeometry(roomSize / 2, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-    const ceilingMat = new THREE.MeshBasicMaterial({
+    galaxyTexture.wrapS = THREE.RepeatWrapping;
+    galaxyTexture.wrapT = THREE.RepeatWrapping;
+    galaxyTexture.repeat.set(2, 2); // Tiles the stars so they aren't stretched
+
+    // 1. THE BOX (Walls and Ceiling)
+    // We make it slightly larger than the floor to avoid gaps
+    const boxGeo = new THREE.BoxGeometry(roomSize, roomSize / 2, roomSize);
+    
+    // We use BackSide so the texture is visible from the INSIDE
+    const boxMat = new THREE.MeshBasicMaterial({
         map: galaxyTexture,
         side: THREE.BackSide,
-        transparent: true,
-        opacity: 0.8
+        color: 0x333333 // Dims the texture slightly for a "deep space" feel
     });
-    const dome = new THREE.Mesh(ceilingGeo, ceilingMat);
-    scene.add(dome);
+
+    const room = new THREE.Mesh(boxGeo, boxMat);
+    // Position it so the bottom of the box is at y = 0
+    room.position.y = roomSize / 4; 
+    scene.add(room);
+
+    // 2. THE FLOOR (Polished & Visible)
+    const floorGeo = new THREE.PlaneGeometry(roomSize, roomSize);
+    const floorMat = new THREE.MeshPhysicalMaterial({
+        color: 0x111122,      // Midnight Blue
+        metalness: 0.6,
+        roughness: 0.2,
+        clearcoat: 1.0,       // This makes the floor reflect the jars!
+        reflectivity: 0.5
+    });
+
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0;
+    scene.add(floor);
+
+    // 3. THE GRID (Essential for seeing the square boundaries)
+    const grid = new THREE.GridHelper(roomSize, 20, 0x4444ff, 0x222244);
+    grid.position.y = 0.01; 
+    scene.add(grid);
 }
 
+// function createTables() {
+//     const spacing = 15;
+//     const start = -15;
+
+//     for (let i = 0; i < 4; i++) {
+//         for (let j = 0; j < 3; j++) {
+//             const x = start + i * spacing;
+//             const z = start + j * spacing;
+
+//             const table = createTable();
+//             table.position.set(x, 0, z);
+//             scene.add(table);
+
+//             const jar = createJar();
+//             jar.position.set(x, 3.5, z);
+//             scene.add(jar);
+//             clickableJars.push(jar); 
+//         }
+//     }
+// }
+
+// function createTable() {
+//     const group = new THREE.Group();
+//     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 3, 16), new THREE.MeshStandardMaterial({ color: 0x3d2b1f }));
+//     base.position.y = 1.5;
+//     const top = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x4a3223 }));
+//     top.position.y = 3.25;
+//     group.add(base, top);
+    
+//     const lamp = new THREE.PointLight(0xffaa44, 10, 15);
+//     lamp.position.set(0, 5, 0);
+//     group.add(lamp);
+    
+//     return group;
+// }
+
+// function createJar() {
+//     return new THREE.Mesh(
+//         new THREE.CylinderGeometry(1, 1, 2.5, 32),
+//         new THREE.MeshPhysicalMaterial({
+//             color: 0x88ccff, transparent: true, opacity: 0.5,
+//             transmission: 1, thickness: 0.5, emissive: 0x0066ff, emissiveIntensity: 0.2
+//         })
+//     );
+// }
+
+// 2. Updated Table Creation for a 4x4 Grid (16 tables)
 function createTables() {
-    const spacing = 15;
-    const start = -15;
+    const spacing = 18;
+    const start = -27; // Adjusted to center the 4x4 grid
+    let themeIndex = 0;
 
     for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 3; j++) {
+        for (let j = 0; j < 4; j++) {
             const x = start + i * spacing;
             const z = start + j * spacing;
 
@@ -107,12 +189,53 @@ function createTables() {
             table.position.set(x, 0, z);
             scene.add(table);
 
-            const jar = createJar();
+            // Create a unique jar for this theme
+            const jar = createJar(themeIndex);
             jar.position.set(x, 3.5, z);
+            
+            // Assign the theme name to the jar's data
+            jar.userData.theme = THEMES[themeIndex].toLowerCase();
+            
             scene.add(jar);
             clickableJars.push(jar); 
+            themeIndex++;
         }
     }
+}
+
+// 3. The "Cooler" Unique Jar Function
+function createJar(index) {
+    // Generate a unique color based on the index
+    const hue = (index / 16); // Distributes colors around the rainbow
+    const jarColor = new THREE.Color().setHSL(hue, 0.6, 0.5);
+    
+    // Randomize dimensions slightly so they aren't identical
+    const randomHeight = 2.2 + Math.random() * 0.8;
+    const randomRadius = 0.8 + Math.random() * 0.4;
+
+    const geometry = new THREE.CylinderGeometry(randomRadius, randomRadius * 0.9, randomHeight, 32);
+    const material = new THREE.MeshPhysicalMaterial({
+        color: jarColor,
+        emissive: jarColor,
+        emissiveIntensity: 0.4,
+        transparent: true,
+        opacity: 0.5,
+        transmission: 1.0, // High glass effect
+        thickness: 1.0,
+        roughness: 0.05,
+        metalness: 0.1
+    });
+
+    const jar = new THREE.Mesh(geometry, material);
+    
+    // Add a "Lid" to make it look like a real jar
+    const lidGeo = new THREE.CylinderGeometry(randomRadius + 0.1, randomRadius + 0.1, 0.3, 32);
+    const lidMat = new THREE.MeshStandardMaterial({ color: 0xccaa44, metalness: 0.8, roughness: 0.2 });
+    const lid = new THREE.Mesh(lidGeo, lidMat);
+    lid.position.y = randomHeight / 2 + 0.1;
+    jar.add(lid);
+
+    return jar;
 }
 
 function createTable() {
@@ -128,16 +251,6 @@ function createTable() {
     group.add(lamp);
     
     return group;
-}
-
-function createJar() {
-    return new THREE.Mesh(
-        new THREE.CylinderGeometry(1, 1, 2.5, 32),
-        new THREE.MeshPhysicalMaterial({
-            color: 0x88ccff, transparent: true, opacity: 0.5,
-            transmission: 1, thickness: 0.5, emissive: 0x0066ff, emissiveIntensity: 0.2
-        })
-    );
 }
 
 function checkJarInteraction() {
