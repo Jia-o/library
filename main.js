@@ -16,7 +16,7 @@ animate();
 function init() {
     const floorColour = 0x888888; 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(floorColour);
+    scene.background = new THREE.Color(0x000000);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 0, 0);
@@ -25,9 +25,9 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
-    // hemiLight.position.set(0, 20, 0);
-    // scene.add(hemiLight);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
 
     const pointLight = new THREE.PointLight(0xffffff, 1);
     pointLight.position.set(0, 10, 0);
@@ -61,59 +61,44 @@ function init() {
 
 function createRoom() {
     const roomSize = 80;
-
-    const wallMaterial = new THREE.MeshStandardMaterial({
-        color: 0x10142a,
-        side: THREE.BackSide
-    });
-
-    const room = new THREE.Mesh(
-        new THREE.BoxGeometry(roomSize, 40, roomSize),
-        wallMaterial
+    const loader = new THREE.TextureLoader();
+    const galaxyTexture = loader.load('ceiling.png');
+    
+    const ceilingGeo = new THREE.SphereGeometry(
+        roomSize / 2,
+        64,
+        32, 
+        0, 
+        Math.PI * 2, 
+        0, 
+        Math.PI / 2 
     );
 
-    room.position.y = 20;
-    scene.add(room);
-    
-    const ceilingGeo = new THREE.SphereGeometry(roomSize / 2, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+    gradient.addColorStop(0, 'white'); 
+    gradient.addColorStop(0.8, 'white');
+    gradient.addColorStop(1, 'black'); 
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1, 256);
+
+    const alphaTexture = new THREE.CanvasTexture(canvas);
+
     const ceilingMat = new THREE.MeshBasicMaterial({
-        color: 0x112244,
+        map: galaxyTexture,
+        alphaMap: alphaTexture,
+        transparent: true,
         side: THREE.BackSide,
+        blending: THREE.NormalBlending,
+        color: 0xffffff
     });
 
     const dome = new THREE.Mesh(ceilingGeo, ceilingMat);
-    dome.position.y = 35;
-    dome.scale.y = 0.5;
+    dome.position.y = 0; 
     scene.add(dome);
-
-    const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomSize, roomSize),
-        new THREE.MeshStandardMaterial({ 
-            color: 0x888888,
-            roughness: 0.8,
-            side: THREE.DoubleSide
-        })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0.01;
-    scene.add(floor);
-
-    const ceilingGlow = new THREE.Mesh(
-        new THREE.PlaneGeometry(roomSize - 5, roomSize - 5),
-        new THREE.MeshBasicMaterial({
-            color: 0x2244aa,
-            transparent: true,
-            opacity: 0.15
-        })
-    );
-
-    ceilingGlow.rotation.x = Math.PI / 2;
-    ceilingGlow.position.y = 39.9;
-    scene.add(ceilingGlow);
-
-    const ceilingLight = new THREE.PointLight(0x4488ff, 20, 100);
-    ceilingLight.position.set(0, 38, 0);
-    scene.add(ceilingLight);
 }
 
 function createTables() {
@@ -202,8 +187,22 @@ function onKeyUp(event) {
 }
 
 function animate() {
-
     requestAnimationFrame(animate);
+
+    scene.traverse((object) => {
+        if (object.geometry && object.geometry.type === 'SphereGeometry') {
+            object.rotation.y += 0.0003; 
+        }
+    });
+
+    const time = Date.now() * 0.002;
+    scene.traverse((object) => {
+        if (object instanceof THREE.PointLight) {
+            object.intensity = 1.5 + Math.sin(time) * 0.2;
+        }
+    });
+
+    renderer.render(scene, camera);
 
     direction.z = Number(moveForward) - Number(moveBackward);
     direction.x = Number(moveRight) - Number(moveLeft);
