@@ -14,7 +14,8 @@ Prompts:
 - there looks like a horizontal white wall i want to remove. here is everything i know about it: it is visible when you first enter the room that disappears once you walk past it, it reppears when you're on one half of the room but not the other, it is glowey and white, removing the hemilight makes it a darker colour, it splits the room exactly in half. im not sure what this may be (a light, fog, etc)
 - gave it my hw4, asked it to learn what it does, asked it to transfer backend onto finished javascript file
 - once a reading is drawn, add an HTML overlay that makes it so you can click a button sending you directly to the url instead of just displaying the plaintext in a message
+- i want to switch from a dome shape to a square shape with the 16 tables put in a 4x4 square
 
 Non-AI:
 - createRoom function in main.js
-- Most of the mody in index.html
+- Most of the body in index.html
