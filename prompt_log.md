@@ -16,7 +16,5 @@ Prompts:
 - once a reading is drawn, add an HTML overlay that makes it so you can click a button sending you directly to the url instead of just displaying the plaintext in a message
 
 Non-AI:
-- basically the entre index.html file
-- inspo images and background images
-- nudging positioning to debug overlapping objects
-- changing colours
+- createRoom function in main.js
+- Most of the mody in index.html

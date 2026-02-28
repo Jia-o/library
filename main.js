@@ -101,41 +101,6 @@ function createRoom() {
     room.position.y = roomSize / 4; 
     scene.add(room);
 
-    // const roomSize = 80;
-    // const loader = new THREE.TextureLoader();
-    
-    // // Load your galaxy texture
-    // const galaxyTexture = loader.load('ceiling.png');
-    // galaxyTexture.wrapS = THREE.RepeatWrapping;
-    // galaxyTexture.wrapT = THREE.RepeatWrapping;
-    // galaxyTexture.repeat.set(2, 2);
-
-    // const boxGeo = new THREE.BoxGeometry(roomSize, roomSize / 2, roomSize);
-    // const boxMat = new THREE.MeshBasicMaterial({
-    //     map: galaxyTexture,
-    //     side: THREE.BackSide,
-    //     color: 0x333333
-    // });
-
-    // const room = new THREE.Mesh(boxGeo, boxMat);
-    // room.position.y = roomSize / 4; 
-    // scene.add(room);
-
-    // const floorGeo = new THREE.PlaneGeometry(roomSize, roomSize);
-    // const floorMat = new THREE.MeshPhysicalMaterial({
-    //     color: 0x111122,      // Midnight Blue
-    //     metalness: 0.6,
-    //     roughness: 0.2,
-    //     clearcoat: 1.0,       // This makes the floor reflect the jars!
-    //     reflectivity: 0.5
-    // });
-
-    // const floor = new THREE.Mesh(floorGeo, floorMat);
-    // floor.rotation.x = -Math.PI / 2;
-    // floor.position.y = 0;
-    // scene.add(floor);
-
-    // 3. THE GRID (Essential for seeing the square boundaries)
     const grid = new THREE.GridHelper(roomSize, 20, 0x4444ff, 0x222244);
     grid.position.y = 0.01; 
     scene.add(grid);
