@@ -80,12 +80,12 @@ function createRoom() {
     const roomSize = 80;
     const loader = new THREE.TextureLoader();
     
-    const wallTexture1 = loader.load('wall1.webp');
-    const wallTexture2 = loader.load('wall2.webp');
-    const wallTexture3 = loader.load('wall3.webp');
-    const wallTexture4 = loader.load('wall4.webp');
-    const ceilingTexture = loader.load('ceiling.jpg');
-    const floorTexture = loader.load('floor.jpg');
+    const wallTexture1 = loader.load('./wall1.webp');
+    const wallTexture2 = loader.load('./wall2.webp');
+    const wallTexture3 = loader.load('./wall3.webp');
+    const wallTexture4 = loader.load('./wall4.webp');
+    const ceilingTexture = loader.load('./ceiling.jpg');
+    const floorTexture = loader.load('./floor.jpg');
     
     const materials = [
         new THREE.MeshBasicMaterial({ map: wallTexture2, side: THREE.BackSide }),
