@@ -253,6 +253,39 @@ function createTable() {
     return group;
 }
 
+// function checkJarInteraction() {
+//     raycaster.setFromCamera(mouse, camera);
+//     const intersects = raycaster.intersectObjects(clickableJars);
+
+//     if (intersects.length > 0) {
+//         const jar = intersects[0].object;
+//         const theme = jar.userData.theme;
+        
+//         if (!theme) {
+//             alert("This jar is still empty... try another or wait for the library to load!");
+//             return;
+//         }
+
+//         const options = backendData.readings.filter(r => r.themes.includes(theme));
+//         const pick = options[Math.floor(Math.random() * options.length)];
+
+//         // Simple Shake
+//         const startX = jar.position.x;
+//         const startTime = Date.now();
+//         const shake = () => {
+//             const elapsed = Date.now() - startTime;
+//             if (elapsed < 400) {
+//                 jar.position.x = startX + Math.sin(elapsed * 0.1) * 0.1;
+//                 requestAnimationFrame(shake);
+//             } else {
+//                 jar.position.x = startX;
+//                 if(pick) alert(`[${theme.toUpperCase()}]\n\n${pick.title}\n\nLink: ${pick.url}`);
+//             }
+//         };
+//         shake();
+//     }
+// }
+
 function checkJarInteraction() {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(clickableJars);
@@ -261,15 +294,11 @@ function checkJarInteraction() {
         const jar = intersects[0].object;
         const theme = jar.userData.theme;
         
-        if (!theme) {
-            alert("This jar is still empty... try another or wait for the library to load!");
-            return;
-        }
-
+        // Filter local backendData
         const options = backendData.readings.filter(r => r.themes.includes(theme));
         const pick = options[Math.floor(Math.random() * options.length)];
 
-        // Simple Shake
+        // Shake animation
         const startX = jar.position.x;
         const startTime = Date.now();
         const shake = () => {
@@ -279,12 +308,30 @@ function checkJarInteraction() {
                 requestAnimationFrame(shake);
             } else {
                 jar.position.x = startX;
-                if(pick) alert(`[${theme.toUpperCase()}]\n\n${pick.title}\n\nLink: ${pick.url}`);
+                if(pick) showReadingCard(theme, pick.title, pick.url);
             }
         };
         shake();
     }
 }
+
+function showReadingCard(theme, title, url) {
+    const card = document.getElementById('readingCard');
+    document.getElementById('cardTheme').innerText = theme;
+    document.getElementById('cardTitle').innerText = title;
+    document.getElementById('cardLink').href = url;
+
+    // Show card and unlock pointer so user can click
+    card.classList.add('active');
+    controls.unlock(); 
+}
+
+// Attach this to window so the HTML button can see it
+window.closeCard = function() {
+    const card = document.getElementById('readingCard');
+    card.classList.remove('active');
+    // Optional: auto-lock again, or let user click to re-enter
+};
 
 // Navigation Logic
 function onKeyDown(event) {

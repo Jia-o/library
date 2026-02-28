@@ -13,6 +13,7 @@ Prompts:
 - it just shows a white screen with the index.html instructions when i run it? the content on main.js doesn't appear. im opening it with live server on vscode and the page has this error: 'Uncaught TypeError: Failed to resolve module specifier "three". Relative references must start with either "/", "./", or "../".'
 - there looks like a horizontal white wall i want to remove. here is everything i know about it: it is visible when you first enter the room that disappears once you walk past it, it reppears when you're on one half of the room but not the other, it is glowey and white, removing the hemilight makes it a darker colour, it splits the room exactly in half. im not sure what this may be (a light, fog, etc)
 - gave it my hw4, asked it to learn what it does, asked it to transfer backend onto finished javascript file
+- once a reading is drawn, add an HTML overlay that makes it so you can click a button sending you directly to the url instead of just displaying the plaintext in a message
 
 Non-AI:
 - basically the entre index.html file

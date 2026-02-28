@@ -16,17 +16,88 @@
       padding: 10px;
       border-radius: 8px;
     }
+    #readingCard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 320px;
+    background: rgba(15, 23, 42, 0.8); /* Dark slate */
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    display: none; /* Hidden by default */
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 200;
+  }
+
+  #readingCard.active {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #cardTheme {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #6366f1; /* Indigo */
+    margin-bottom: 10px;
+  }
+
+  #cardTitle {
+    font-size: 20px;
+    margin-bottom: 25px;
+    line-height: 1.4;
+  }
+
+  .card-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: bold;
+    transition: transform 0.2s;
+  }
+
+  .card-btn:hover { transform: translateY(-2px); }
+
+  #closeBtn {
+    margin-top: 15px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: underline;
+  }
   </style>
 </head>
 <body>
 
-<div id="instructions">
-  Click to Start <br>
-  Use the arrow keys to move <br>
-  Use the mouse to change view
-</div>
+  <div id="instructions">
+    Click to Start <br>
+    Use the arrow keys to move <br>
+    Use the mouse to change view
+  </div>
 
-<script type="importmap">
+  <div id="readingCard">
+    <div id="cardTheme">THEME</div>
+    <div id="cardTitle">Article Title Goes Here</div>
+    <a id="cardLink" href="#" target="_blank" class="card-btn">Read Entry →</a>
+    <br>
+    <button id="closeBtn" onclick="closeCard()">Put it back</button>
+  </div>
+
+  <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js",
