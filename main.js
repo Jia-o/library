@@ -14,7 +14,7 @@ const THEMES = [
     "AI", "Altruism", "Art", "Culture", 
     "Economics", "Environment", "Ethics", "Health", 
     "IR", "Media", "Philosophy", "Policy", 
-    "Politics", "Technology", "History", "Random"
+    "Politics", "Technology", "Humour", "Random"
 ];
 
 init();
@@ -128,76 +128,61 @@ function createRoom() {
     scene.add(grid);
 }
 
-// function createTables() {
-//     const spacing = 15;
-//     const start = -15;
-
-//     for (let i = 0; i < 4; i++) {
-//         for (let j = 0; j < 3; j++) {
-//             const x = start + i * spacing;
-//             const z = start + j * spacing;
-
-//             const table = createTable();
-//             table.position.set(x, 0, z);
-//             scene.add(table);
-
-//             const jar = createJar();
-//             jar.position.set(x, 3.5, z);
-//             scene.add(jar);
-//             clickableJars.push(jar); 
-//         }
-//     }
-// }
-
-// function createTable() {
-//     const group = new THREE.Group();
-//     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 3, 16), new THREE.MeshStandardMaterial({ color: 0x3d2b1f }));
-//     base.position.y = 1.5;
-//     const top = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x4a3223 }));
-//     top.position.y = 3.25;
-//     group.add(base, top);
+function createTextLabel(text) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
     
-//     const lamp = new THREE.PointLight(0xffaa44, 10, 15);
-//     lamp.position.set(0, 5, 0);
-//     group.add(lamp);
+    canvas.width = 1024; 
+    canvas.height = 256;
+
+    context.font = 'Bold 80px Arial';
+    context.textAlign = 'center';
+    context.fillStyle = '#ffffff'; 
+    context.strokeStyle = '#6366f1'; 
+    context.lineWidth = 6;
     
-//     return group;
-// }
+    context.strokeText(text.toUpperCase(), 512, 150);
+    context.fillText(text.toUpperCase(), 512, 150);
 
-// function createJar() {
-//     return new THREE.Mesh(
-//         new THREE.CylinderGeometry(1, 1, 2.5, 32),
-//         new THREE.MeshPhysicalMaterial({
-//             color: 0x88ccff, transparent: true, opacity: 0.5,
-//             transmission: 1, thickness: 0.5, emissive: 0x0066ff, emissiveIntensity: 0.2
-//         })
-//     );
-// }
+    const texture = new THREE.CanvasTexture(canvas);
+    
+    const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture, 
+        transparent: true, 
+        opacity: 0.5 
+    });
+    
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(8, 2, 1); 
+    return sprite;
+}
 
-// 2. Updated Table Creation for a 4x4 Grid (16 tables)
 function createTables() {
     const spacing = 18;
-    const start = -27; // Adjusted to center the 4x4 grid
+    const start = -27; 
     let themeIndex = 0;
 
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             const x = start + i * spacing;
             const z = start + j * spacing;
+            const themeName = THEMES[themeIndex];
 
             const table = createTable();
             table.position.set(x, 0, z);
             scene.add(table);
 
-            // Create a unique jar for this theme
             const jar = createJar(themeIndex);
             jar.position.set(x, 3.5, z);
-            
-            // Assign the theme name to the jar's data
-            jar.userData.theme = THEMES[themeIndex].toLowerCase();
-            
+            jar.userData.theme = themeName.toLowerCase();
             scene.add(jar);
-            clickableJars.push(jar); 
+            clickableJars.push(jar);
+
+            // Add the floating label
+            const label = createTextLabel(themeName);
+            label.position.set(x, 8, z); // Floating above the jar
+            scene.add(label);
+
             themeIndex++;
         }
     }
@@ -253,39 +238,6 @@ function createTable() {
     return group;
 }
 
-// function checkJarInteraction() {
-//     raycaster.setFromCamera(mouse, camera);
-//     const intersects = raycaster.intersectObjects(clickableJars);
-
-//     if (intersects.length > 0) {
-//         const jar = intersects[0].object;
-//         const theme = jar.userData.theme;
-        
-//         if (!theme) {
-//             alert("This jar is still empty... try another or wait for the library to load!");
-//             return;
-//         }
-
-//         const options = backendData.readings.filter(r => r.themes.includes(theme));
-//         const pick = options[Math.floor(Math.random() * options.length)];
-
-//         // Simple Shake
-//         const startX = jar.position.x;
-//         const startTime = Date.now();
-//         const shake = () => {
-//             const elapsed = Date.now() - startTime;
-//             if (elapsed < 400) {
-//                 jar.position.x = startX + Math.sin(elapsed * 0.1) * 0.1;
-//                 requestAnimationFrame(shake);
-//             } else {
-//                 jar.position.x = startX;
-//                 if(pick) alert(`[${theme.toUpperCase()}]\n\n${pick.title}\n\nLink: ${pick.url}`);
-//             }
-//         };
-//         shake();
-//     }
-// }
-
 function checkJarInteraction() {
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(clickableJars);
@@ -294,21 +246,30 @@ function checkJarInteraction() {
         const jar = intersects[0].object;
         const theme = jar.userData.theme;
         
-        // Filter local backendData
-        const options = backendData.readings.filter(r => r.themes.includes(theme));
-        const pick = options[Math.floor(Math.random() * options.length)];
+        let options;
+        if (theme === "random") {
+            options = backendData.readings; // Everything!
+        } else {
+            options = backendData.readings.filter(r => r.themes.includes(theme));
+        }
 
-        // Shake animation
+        const pick = options[Math.floor(Math.random() * options.length)];
+        
+        // Shake logic...
         const startX = jar.position.x;
         const startTime = Date.now();
         const shake = () => {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 400) {
+            if (elapsed < 1000) {
                 jar.position.x = startX + Math.sin(elapsed * 0.1) * 0.1;
                 requestAnimationFrame(shake);
             } else {
                 jar.position.x = startX;
-                if(pick) showReadingCard(theme, pick.title, pick.url);
+                if(pick) {
+                    showReadingCard(theme, pick.title, pick.url);
+                } else {
+                    showReadingCard(theme, "This jar is currently empty!", "#");
+                }
             }
         };
         shake();
