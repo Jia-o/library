@@ -80,17 +80,20 @@ function createRoom() {
     const roomSize = 80;
     const loader = new THREE.TextureLoader();
     
-    const wallTexture = loader.load('background4.png');
-    const ceilingTexture = loader.load('ceiling2.png');
-    const floorTexture = loader.load('ceiling.png');
+    const wallTexture1 = loader.load('wall1.webp');
+    const wallTexture2 = loader.load('wall2.webp');
+    const wallTexture3 = loader.load('wall3.webp');
+    const wallTexture4 = loader.load('wall4.webp');
+    const ceilingTexture = loader.load('ceiling.jpg');
+    const floorTexture = loader.load('floor.jpg');
     
     const materials = [
-        new THREE.MeshBasicMaterial({ map: wallTexture, side: THREE.BackSide }),
-        new THREE.MeshBasicMaterial({ map: wallTexture, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ map: wallTexture2, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ map: wallTexture4, side: THREE.BackSide }),
         new THREE.MeshBasicMaterial({ map: ceilingTexture, side: THREE.BackSide }), // ceiling
         new THREE.MeshBasicMaterial({ map: floorTexture, side: THREE.BackSide }), // floor
-        new THREE.MeshBasicMaterial({ map: wallTexture, side: THREE.BackSide }),
-        new THREE.MeshBasicMaterial({ map: wallTexture, side: THREE.BackSide })
+        new THREE.MeshBasicMaterial({ map: wallTexture1, side: THREE.BackSide }),
+        new THREE.MeshBasicMaterial({ map: wallTexture3, side: THREE.BackSide })
     ];
 
     const boxGeo = new THREE.BoxGeometry(roomSize, roomSize / 2, roomSize);
