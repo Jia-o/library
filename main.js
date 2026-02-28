@@ -59,26 +59,41 @@ function init() {
     window.addEventListener('resize', onWindowResize);
 }
 
-// Separate fetch function so it doesn't block the rendering
 async function fetchData() {
     try {
         const response = await fetch('https://reading-list-backend-a71i.onrender.com/get-data');
         const data = await response.json();
         backendData = data;
         
-        // Assign tags to existing jars
-        clickableJars.forEach((jar, index) => {
-            if (data.tags && data.tags[index]) {
-                jar.userData.theme = data.tags[index];
-                // Change color slightly to show it's "loaded"
-                jar.material.emissiveIntensity = 1.0; 
-            }
+        clickableJars.forEach((jar) => {
+            jar.material.emissiveIntensity = 0.8; 
         });
-        console.log("Jars labeled with themes:", data.tags);
+
+        console.log("Data loaded successfully");
     } catch (e) {
-        console.error("Data fetch failed, jars will remain random.");
+        console.error("Data fetch failed:", e);
     }
 }
+
+// async function fetchData() {
+//     try {
+//         const response = await fetch('https://reading-list-backend-a71i.onrender.com/get-data');
+//         const data = await response.json();
+//         backendData = data;
+        
+//         // Assign tags to existing jars
+//         clickableJars.forEach((jar, index) => {
+//             if (data.tags && data.tags[index]) {
+//                 jar.userData.theme = data.tags[index];
+//                 // Change color slightly to show it's "loaded"
+//                 jar.material.emissiveIntensity = 1.0; 
+//             }
+//         });
+//         console.log("Jars labeled with themes:", data.tags);
+//     } catch (e) {
+//         console.error("Data fetch failed, jars will remain random.");
+//     }
+// }
 
 
 function createRoom() {
