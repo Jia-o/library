@@ -80,12 +80,12 @@ function createRoom() {
     const roomSize = 80;
     const loader = new THREE.TextureLoader();
     
-    const wallTexture1 = loader.load('./wall1.webp');
-    const wallTexture2 = loader.load('./wall2.webp');
-    const wallTexture3 = loader.load('./wall3.webp');
-    const wallTexture4 = loader.load('./wall4.webp');
+    const wallTexture1 = loader.load('./wall1.png');
+    const wallTexture2 = loader.load('./wall2.png');
+    const wallTexture3 = loader.load('./wall3.png');
+    const wallTexture4 = loader.load('./wall4.png');
     const ceilingTexture = loader.load('./ceiling.jpg');
-    const floorTexture = loader.load('./floor.jpg');
+    const floorTexture = loader.load('./floor.png');
     
     const materials = [
         new THREE.MeshBasicMaterial({ map: wallTexture2, side: THREE.BackSide }),
@@ -96,13 +96,13 @@ function createRoom() {
         new THREE.MeshBasicMaterial({ map: wallTexture3, side: THREE.BackSide })
     ];
 
-    const boxGeo = new THREE.BoxGeometry(roomSize, roomSize / 2, roomSize);
+    const boxGeo = new THREE.BoxGeometry(roomSize, roomSize/1.5, roomSize);
     const room = new THREE.Mesh(boxGeo, materials);
-    room.position.y = roomSize / 4; 
+    room.position.y = roomSize/4; 
     scene.add(room);
 
     const grid = new THREE.GridHelper(roomSize, 20, 0x4444ff, 0x222244);
-    grid.position.y = 0.01; 
+    grid.position.y = 0; 
     scene.add(grid);
 }
 
@@ -137,7 +137,7 @@ function createTextLabel(text) {
 
 function createTables() {
     const spacing = 18;
-    const start = -27; 
+    const start = -30; 
     let themeIndex = 0;
 
     for (let i = 0; i < 4; i++) {
