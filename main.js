@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
+// --- 1. SETTINGS & GLOBALS ---
 let scene, camera, renderer, controls;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 
@@ -8,7 +9,6 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(0, 0); 
 let clickableJars = []; 
 let backendData = { readings: [], tags: [] };
-let textureLoader = new THREE.TextureLoader();
 
 const THEMES = [
     "AI", "Altruism", "Art", "Culture", 
@@ -17,22 +17,36 @@ const THEMES = [
     "Politics", "Technology", "Humour", "Random"
 ];
 
+// --- 2. ASSET LOADING ---
+const loadingManager = new THREE.LoadingManager();
+const textureLoader = new THREE.TextureLoader(loadingManager);
+const jarTextures = {};
+
+// Pre-load all 16 textures based on the THEMES array
+THEMES.forEach(theme => {
+    // Note: ensure your PNGs are in the same folder as this script
+    jarTextures[theme] = textureLoader.load(`./assets/${theme}.png`);
+});
+
+loadingManager.onLoad = () => {
+    console.log("All jar textures successfully loaded.");
+};
+
+// --- 3. INITIALIZATION ---
 init();
 animate();
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x02030a); // Dark midnight blue instead of pure black
+    scene.background = new THREE.Color(0x02030a); 
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // Move camera back so you aren't staring at a wall
-    camera.position.set(0, 5, 10); 
+    camera.position.set(0, 5, 15); 
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Lights - Increased intensity to ensure visibility
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
     scene.add(hemiLight);
     
@@ -50,8 +64,18 @@ function init() {
         }
     });
 
+    const crosshair = document.getElementById('crosshair');
+
+    controls.addEventListener('lock', () => {
+        crosshair.style.display = 'block';
+    });
+    
+    controls.addEventListener('unlock', () => {
+        crosshair.style.display = 'none';
+    });
+
     createRoom();
-    createTables();
+    createTables(); // This now uses the pre-loaded sprites
     fetchData();
 
     document.addEventListener('keydown', onKeyDown);
@@ -59,80 +83,91 @@ function init() {
     window.addEventListener('resize', onWindowResize);
 }
 
+// --- 4. DATA FETCHING ---
 async function fetchData() {
     try {
         const response = await fetch('https://reading-list-backend-a71i.onrender.com/get-data');
         const data = await response.json();
         backendData = data;
-        
-        clickableJars.forEach((jar) => {
-            jar.material.emissiveIntensity = 0.8; 
-        });
-
         console.log("Data loaded successfully");
     } catch (e) {
         console.error("Data fetch failed:", e);
     }
 }
 
-
+// --- 5. WORLD BUILDING ---
 function createRoom() {
     const roomSize = 80;
-    const loader = new THREE.TextureLoader();
     
-    const wallTexture1 = loader.load('./wall1.png');
-    const wallTexture2 = loader.load('./wall2.png');
-    const wallTexture3 = loader.load('./wall3.png');
-    const wallTexture4 = loader.load('./wall4.png');
-    const ceilingTexture = loader.load('./ceiling.jpg');
-    const floorTexture = loader.load('./floor.png');
+    // 1. Load the textures for the room
+    const wallTexture1 = textureLoader.load('./wall1.png');
+    const wallTexture2 = textureLoader.load('./wall2.png');
+    const wallTexture3 = textureLoader.load('./wall3.png');
+    const wallTexture4 = textureLoader.load('./wall4.png');
+    const ceilingTexture = textureLoader.load('./ceiling.jpg');
+    const floorTexture = textureLoader.load('./floor.png');
     
+    // 2. Define the materials for each face of the box
     const materials = [
-        new THREE.MeshBasicMaterial({ map: wallTexture2, side: THREE.BackSide }),
-        new THREE.MeshBasicMaterial({ map: wallTexture4, side: THREE.BackSide }),
-        new THREE.MeshBasicMaterial({ map: ceilingTexture, side: THREE.BackSide }), // ceiling
-        new THREE.MeshBasicMaterial({ map: floorTexture, side: THREE.BackSide }), // floor
-        new THREE.MeshBasicMaterial({ map: wallTexture1, side: THREE.BackSide }),
-        new THREE.MeshBasicMaterial({ map: wallTexture3, side: THREE.BackSide })
+        new THREE.MeshBasicMaterial({ map: wallTexture2, side: THREE.BackSide }), // Right
+        new THREE.MeshBasicMaterial({ map: wallTexture4, side: THREE.BackSide }), // Left
+        new THREE.MeshBasicMaterial({ map: ceilingTexture, side: THREE.BackSide }), // Ceiling
+        new THREE.MeshBasicMaterial({ map: floorTexture, side: THREE.BackSide }), // Floor
+        new THREE.MeshBasicMaterial({ map: wallTexture1, side: THREE.BackSide }), // Front
+        new THREE.MeshBasicMaterial({ map: wallTexture3, side: THREE.BackSide })  // Back
     ];
 
-    const boxGeo = new THREE.BoxGeometry(roomSize, roomSize/1.5, roomSize);
+    // 3. Create the box geometry and mesh
+    const boxGeo = new THREE.BoxGeometry(roomSize, roomSize / 1.5, roomSize);
     const room = new THREE.Mesh(boxGeo, materials);
-    room.position.y = roomSize/4; 
+    
+    // Position the room so the floor is at y=0
+    room.position.y = roomSize / 4; 
     scene.add(room);
 
+    // Optional: Keep the grid for a techy floor vibe, or remove it to see just your floor texture
     const grid = new THREE.GridHelper(roomSize, 20, 0x4444ff, 0x222244);
-    grid.position.y = 0; 
+    grid.position.y = 0.01; // Slightly above the floor to prevent flickering
     scene.add(grid);
 }
 
-function createTextLabel(text) {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+function createTable() {
+    const group = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 3, 16), new THREE.MeshStandardMaterial({ color: 0x3d2b1f }));
+    base.position.y = 1.5;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x4a3223 }));
+    top.position.y = 2.65;
+    group.add(base, top);
     
-    canvas.width = 1024; 
-    canvas.height = 256;
+    const lamp = new THREE.PointLight(0xffaa44, 5, 10);
+    lamp.position.set(0, 4, 0);
+    group.add(lamp);
+    
+    return group;
+}
 
-    context.font = 'Bold 80px Arial';
-    context.textAlign = 'center';
-    context.fillStyle = '#ffffff'; 
-    context.strokeStyle = '#6366f1'; 
-    context.lineWidth = 6;
-    
-    context.strokeText(text.toUpperCase(), 512, 150);
-    context.fillText(text.toUpperCase(), 512, 150);
+function createJar(index) {
+    const themeName = THEMES[index];
+    const texture = jarTextures[themeName];
 
-    const texture = new THREE.CanvasTexture(canvas);
-    
     const spriteMaterial = new THREE.SpriteMaterial({ 
-        map: texture, 
-        transparent: true, 
-        opacity: 0.5 
+        map: texture,
+        transparent: true,
+        alphaTest: 0.1 
     });
-    
-    const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.scale.set(8, 2, 1); 
-    return sprite;
+
+    const jar = new THREE.Sprite(spriteMaterial);
+    jar.scale.set(9, 5, 1);
+    jar.userData.theme = themeName.toLowerCase();
+
+    // Add a point light slightly behind the sprite to light the table/floor
+    const hue = (index / 16);
+    const jarColor = new THREE.Color().setHSL(hue, 0.6, 0.5);
+    const innerLight = new THREE.PointLight(jarColor, 3, 6);
+    innerLight.position.set(0, 0, -0.5);
+    jar.add(innerLight);
+
+    return jar;
 }
 
 function createTables() {
@@ -151,14 +186,12 @@ function createTables() {
             scene.add(table);
 
             const jar = createJar(themeIndex);
-            jar.position.set(x, 3.5, z);
-            jar.userData.theme = themeName.toLowerCase();
+            jar.position.set(x, 5.5, z); // Positioned on top of the table
             scene.add(jar);
             clickableJars.push(jar);
 
-            // Add the floating label
             const label = createTextLabel(themeName);
-            label.position.set(x, 8, z); // Floating above the jar
+            label.position.set(x, 10, z); 
             scene.add(label);
 
             themeIndex++;
@@ -166,129 +199,52 @@ function createTables() {
     }
 }
 
-function createJar(index) {
-    const hue = (index / 16);
-    const jarColor = new THREE.Color().setHSL(hue, 0.6, 0.5);
+function createTextLabel(text) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 512; canvas.height = 128;
+    context.font = 'Bold 40px Arial';
+    context.textAlign = 'center';
+    context.fillStyle = '#ffffff';
+    context.fillText(text.toUpperCase(), 256, 64);
 
-    // Create a silhouette profile for a curved bottle
-    const points = [];
-    for (let i = 0; i <= 10; i++) {
-        // This math creates a "belly" on the bottle
-        const x = Math.sin(i * 0.3) * 0.8 + 0.4; 
-        const y = (i - 5) * 0.4;
-        points.push(new THREE.Vector2(x, y));
-    }
-
-    const geometry = new THREE.LatheGeometry(points, 32);
-    const material = new THREE.MeshPhysicalMaterial({
-        color: jarColor,
-        emissive: jarColor,
-        emissiveIntensity: 0.6, // Makes them "glow" like the potion images
-        transparent: true,
-        opacity: 0.7,
-        transmission: 0.9,
-        roughness: 0.1,
-        metalness: 0.2,
-        thickness: 2.0
-    });
-
-    const jar = new THREE.Mesh(geometry, material);
-    
-    // Add a cork instead of a metal lid for that aesthetic vibe
-    const corkGeo = new THREE.CylinderGeometry(0.45, 0.35, 0.4, 16);
-    const corkMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b });
-    const cork = new THREE.Mesh(corkGeo, corkMat);
-    cork.position.y = 2.2;
-    jar.add(cork);
-
-    // Optional: Add a small point light inside for extra "magic"
-    const innerLight = new THREE.PointLight(jarColor, 5, 3);
-    jar.add(innerLight);
-
-    return jar;
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(6, 1.5, 1);
+    return sprite;
 }
 
-// function createJar(index) {
-//     const hue = (index / 16); // colours around the rainbow
-//     const jarColor = new THREE.Color().setHSL(hue, 0.6, 0.5);
-    
-//     // random dimentions
-//     const randomHeight = 2.2 + Math.random() * 0.8;
-//     const randomRadius = 0.8 + Math.random() * 0.4;
-
-//     const geometry = new THREE.CylinderGeometry(randomRadius, randomRadius * 0.9, randomHeight, 32);
-//     const material = new THREE.MeshPhysicalMaterial({
-//         color: jarColor,
-//         emissive: jarColor,
-//         emissiveIntensity: 0.4,
-//         transparent: true,
-//         opacity: 0.5,
-//         transmission: 1.0, 
-//         thickness: 1.0,
-//         roughness: 0.05,
-//         metalness: 0.1
-//     });
-
-//     const jar = new THREE.Mesh(geometry, material);
-//     const lidGeo = new THREE.CylinderGeometry(randomRadius + 0.1, randomRadius + 0.1, 0.3, 32);
-//     const lidMat = new THREE.MeshStandardMaterial({ color: 0xccaa44, metalness: 0.8, roughness: 0.2 });
-//     const lid = new THREE.Mesh(lidGeo, lidMat);
-//     lid.position.y = randomHeight / 2 + 0.1;
-//     jar.add(lid);
-
-//     return jar;
-// }
-
-function createTable() {
-    const group = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 3, 16), new THREE.MeshStandardMaterial({ color: 0x3d2b1f }));
-    base.position.y = 1.5;
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x4a3223 }));
-    top.position.y = 2.65;
-    group.add(base, top);
-    
-    const lamp = new THREE.PointLight(0xffaa44, 10, 15);
-    lamp.position.set(0, 5, 0);
-    group.add(lamp);
-    
-    return group;
-}
-
+// --- 6. INTERACTION & ANIMATION ---
 function checkJarInteraction() {
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(clickableJars);
+    const intersects = raycaster.intersectObjects(clickableJars, true);
 
     if (intersects.length > 0) {
         const jar = intersects[0].object;
         const theme = jar.userData.theme;
         
-        let options;
-        if (theme === "random") {
-            options = backendData.readings; // Everything!
-        } else {
-            options = backendData.readings.filter(r => r.themes.includes(theme));
-        }
+        let options = theme === "random" 
+            ? backendData.readings 
+            : backendData.readings.filter(r => r.themes.map(t => t.toLowerCase()).includes(theme));
 
         const pick = options[Math.floor(Math.random() * options.length)];
         
-        // Shake logic...
-        const startX = jar.position.x;
+        // Hopping animation
+        const startY = jar.position.y;
         const startTime = Date.now();
-        const shake = () => {
+        const hop = () => {
             const elapsed = Date.now() - startTime;
-            if (elapsed < 1000) {
-                jar.position.x = startX + Math.sin(elapsed * 0.1) * 0.1;
-                requestAnimationFrame(shake);
+            if (elapsed < 400) {
+                jar.position.y = startY + Math.abs(Math.sin(elapsed * 0.01)) * 1.5;
+                requestAnimationFrame(hop);
             } else {
-                jar.position.x = startX;
-                if(pick) {
-                    showReadingCard(theme, pick.title, pick.url);
-                } else {
-                    showReadingCard(theme, "This jar is currently empty!", "#");
-                }
+                jar.position.y = startY;
+                if(pick) showReadingCard(theme, pick.title, pick.url);
+                else showReadingCard(theme, "This jar is currently empty!", "#");
             }
         };
-        shake();
+        hop();
     }
 }
 
@@ -297,20 +253,14 @@ function showReadingCard(theme, title, url) {
     document.getElementById('cardTheme').innerText = theme;
     document.getElementById('cardTitle').innerText = title;
     document.getElementById('cardLink').href = url;
-
-    // Show card and unlock pointer so user can click
     card.classList.add('active');
     controls.unlock(); 
 }
 
-// Attach this to window so the HTML button can see it
 window.closeCard = function() {
-    const card = document.getElementById('readingCard');
-    card.classList.remove('active');
-    // Optional: auto-lock again, or let user click to re-enter
+    document.getElementById('readingCard').classList.remove('active');
 };
 
-// Navigation Logic
 function onKeyDown(event) {
     switch (event.code) {
         case 'ArrowUp': case 'KeyW': moveForward = true; break;
@@ -331,13 +281,10 @@ function onKeyUp(event) {
 
 function animate() {
     requestAnimationFrame(animate);
-
     const directionZ = Number(moveForward) - Number(moveBackward);
     const directionX = Number(moveRight) - Number(moveLeft);
-
     if (moveForward || moveBackward) controls.moveForward(directionZ * 0.2);
     if (moveLeft || moveRight) controls.moveRight(directionX * 0.2);
-
     renderer.render(scene, camera);
 }
 

@@ -79,6 +79,33 @@
     font-size: 12px;
     text-decoration: underline;
   }
+
+  #crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    transform: translate(-50%, -50%);
+    display: none;
+    pointer-events: none;
+  }
+
+  #crosshair::before, #crosshair::after {
+      content: '';
+      position: absolute;
+      background-color: white;
+  }
+
+  /* Vertical line */
+  #crosshair::before {
+      top: 0; left: 9px; width: 2px; height: 20px;
+  }
+
+  /* Horizontal line */
+  #crosshair::after {
+      top: 9px; left: 0; width: 20px; height: 2px;
+  }
   </style>
 </head>
 <body>
@@ -96,6 +123,8 @@
     <br>
     <button id="closeBtn" onclick="closeCard()">Put it back</button>
   </div>
+
+  <div id="crosshair"></div>
 
   <script type="importmap">
     {
