@@ -32,6 +32,18 @@ loadingManager.onLoad = () => {
     console.log("All jar textures successfully loaded.");
 };
 
+const shadowTexture = (function() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(0,0,0,0.6)'); // Darker center
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');   // Transparent edge
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(canvas);
+})();
+
 // --- 3. INITIALIZATION ---
 init();
 animate();
@@ -138,36 +150,57 @@ function createTable() {
     const top = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x4a3223 }));
     top.position.y = 2.65;
     group.add(base, top);
-    
-    const lamp = new THREE.PointLight(0xffaa44, 5, 10);
-    lamp.position.set(0, 4, 0);
+
+    const lamp = new THREE.PointLight(0xffaa44, 5, 15);
+    lamp.position.set(0, 5, 0);
+    lamp.castShadow = true;
+    lamp.shadow.mapSize.width = 512; 
+    lamp.shadow.mapSize.height = 512;
     group.add(lamp);
+
+    // const lamp = new THREE.PointLight(0xffaa44, 5, 10);
+    // lamp.position.set(0, 4, 0);
+    // group.add(lamp);
     
     return group;
 }
 
 function createJar(index) {
+    const group = new THREE.Group(); 
     const themeName = THEMES[index];
     const texture = jarTextures[themeName];
 
+    // The Sprite (The Jar itself)
     const spriteMaterial = new THREE.SpriteMaterial({ 
         map: texture,
         transparent: true,
         alphaTest: 0.1 
     });
-
     const jar = new THREE.Sprite(spriteMaterial);
     jar.scale.set(9, 5, 1);
     jar.userData.theme = themeName.toLowerCase();
+    group.add(jar);
 
-    // Add a point light slightly behind the sprite to light the table/floor
+    // The Shadow Plane (The "feet" of the jar)
+    const shadowGeo = new THREE.PlaneGeometry(2.5, 1.5); 
+    const shadowMat = new THREE.MeshBasicMaterial({ 
+        map: shadowTexture, 
+        transparent: true, 
+        depthWrite: false,
+        opacity: 1
+    });
+    const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+    shadow.position.y = -2.5;
+    shadow.rotation.x = -Math.PI / 2;
+    group.add(shadow);
+
     const hue = (index / 16);
     const jarColor = new THREE.Color().setHSL(hue, 0.6, 0.5);
     const innerLight = new THREE.PointLight(jarColor, 3, 6);
     innerLight.position.set(0, 0, -0.5);
-    jar.add(innerLight);
+    group.add(innerLight);
 
-    return jar;
+    return group;
 }
 
 function createTables() {
@@ -185,10 +218,15 @@ function createTables() {
             table.position.set(x, 0, z);
             scene.add(table);
 
-            const jar = createJar(themeIndex);
-            jar.position.set(x, 5.5, z); // Positioned on top of the table
-            scene.add(jar);
-            clickableJars.push(jar);
+            // const jar = createJar(themeIndex);
+            // jar.position.set(x, 5.5, z);
+            // scene.add(jar);
+            // clickableJars.push(jar);
+
+            const jarGroup = createJar(themeIndex);
+            jarGroup.position.set(x, 5.5, z); 
+            scene.add(jarGroup);
+            clickableJars.push(jarGroup.children[0]);
 
             const label = createTextLabel(themeName);
             label.position.set(x, 10, z); 
@@ -221,25 +259,19 @@ function checkJarInteraction() {
     const intersects = raycaster.intersectObjects(clickableJars, true);
 
     if (intersects.length > 0) {
-        const jar = intersects[0].object;
-        const theme = jar.userData.theme;
+        const jarSprite = intersects[0].object; 
+        const theme = jarSprite.userData.theme;
         
-        let options = theme === "random" 
-            ? backendData.readings 
-            : backendData.readings.filter(r => r.themes.map(t => t.toLowerCase()).includes(theme));
-
-        const pick = options[Math.floor(Math.random() * options.length)];
-        
-        // Hopping animation
-        const startY = jar.position.y;
+        const startY = 0; 
         const startTime = Date.now();
+        
         const hop = () => {
             const elapsed = Date.now() - startTime;
             if (elapsed < 400) {
-                jar.position.y = startY + Math.abs(Math.sin(elapsed * 0.01)) * 1.5;
+                jarSprite.position.y = startY + Math.abs(Math.sin(elapsed * 0.01)) * 1.5;
                 requestAnimationFrame(hop);
             } else {
-                jar.position.y = startY;
+                jarSprite.position.y = startY;
                 if(pick) showReadingCard(theme, pick.title, pick.url);
                 else showReadingCard(theme, "This jar is currently empty!", "#");
             }
