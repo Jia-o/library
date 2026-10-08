@@ -86,7 +86,7 @@ function init() {
 // --- 4. DATA FETCHING ---
 async function fetchData() {
     try {
-        const response = await fetch('/readings.json', { cache: 'no-store' });
+        const response = await fetch('/jiao/readings.json', { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         backendData = data;
