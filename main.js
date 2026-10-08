@@ -86,10 +86,11 @@ function init() {
 // --- 4. DATA FETCHING ---
 async function fetchData() {
     try {
-        const response = await fetch('https://reading-list-backend-a71i.onrender.com/get-data');
+        const response = await fetch('/readings.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         backendData = data;
-        console.log("Data loaded successfully");
+        console.log("Data loaded successfully:", data.readings.length, "readings");
     } catch (e) {
         console.error("Data fetch failed:", e);
     }
